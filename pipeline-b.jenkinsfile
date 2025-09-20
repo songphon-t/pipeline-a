@@ -1,0 +1,60 @@
+pipeline {
+    agent any
+
+    environment {
+        GITHUB_CREDENTIALS = 'fa6ef52c-f5d5-453e-8d1e-88272628e198'
+    }
+
+    parameters {
+         string(
+            name: 'TARGET_REPO1',
+            defaultValue: 'https://github.com/songphon-t/grpc.git',
+            description: 'repo url for source code',
+        )
+         string(
+            name: 'TARGET_BRANCH1',
+            defaultValue: 'master',
+            description: 'branch name for source code',
+        )
+
+    }
+
+    stages {
+        stage('Checkout scm') {
+            steps {
+                dir('pipeline-repo') {
+                    checkout scm
+                }
+            }
+        }
+
+        stage('Clone Repo with PAT') {
+            steps {
+                git url: "${params.TARGET_REPO1}", branch: "${params.TARGET_BRANCH1}"
+            }
+        }
+
+        stage('Run Doxygen') {
+            steps {
+                sh 'doxygen ./pipeline-repo/config-base.doxyfile'
+            }
+        }
+        stage('Package folder') {
+            steps {
+                sh "tar -czf doxygen_output-${env.JOB_NAME}-${env.BUILD_NUMBER}.tar.gz doxygen_output"
+            }
+        }
+
+        stage('Archive') {
+            steps {
+                archiveArtifacts artifacts: "doxygen_output-${env.JOB_NAME}-${env.BUILD_NUMBER}.tar.gz", fingerprint: true
+            }
+        }
+    }
+    post {
+        always {
+            echo "Cleaning up workspace after pipeline finishes..."
+            deleteDir()
+        }
+    }
+}
