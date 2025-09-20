@@ -1,10 +1,6 @@
 pipeline {
     agent any
 
-    environment {
-        GITHUB_CREDENTIALS = 'fa6ef52c-f5d5-453e-8d1e-88272628e198'
-    }
-
     parameters {
          string(
             name: 'TARGET_REPO1',
