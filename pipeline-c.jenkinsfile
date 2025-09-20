@@ -1,0 +1,89 @@
+pipeline {
+    agent any
+
+    parameters {
+         string(
+            name: 'TARGET_REPO1',
+            defaultValue: 'https://github.com/songphon-t/grpc.git',
+            description: 'repo url for source code',
+        )
+         string(
+            name: 'TARGET_BRANCH1',
+            defaultValue: 'master',
+            description: 'branch name for source code',
+        )
+        string(
+            name: 'TARGET_REPO2',
+            defaultValue: 'https://github.com/songphon-t/doxygen-warning-parser.git',
+            description: 'repo url for parser',
+        )
+         string(
+            name: 'TARGET_BRANCH2',
+            defaultValue: 'main',
+            description: 'branch name for parser',
+        )    
+        string(
+            name: 'WARNING_FILENAME',
+            defaultValue: 'doxygen_warnings.log',
+            description: 'warning file name as output from oxygen run',
+        )
+        string(
+            name: 'WARNING_PARSED_RESULT_NAME',
+            defaultValue: 'doxygen_warnings_parsed.csv',
+            description: 'csv output file name after parsing',
+        ) 
+    }
+
+    stages {
+        stage('Checkout scm') {
+            steps {
+                dir('pipeline-repo') {
+                    checkout scm
+                }
+            }
+        }
+
+        stage('Clone Repo with PAT') {
+            steps {
+                git url: "${params.TARGET_REPO1}", branch: "${params.TARGET_BRANCH1}"
+            }
+        }
+
+        stage('Clone python parser repo') {
+            steps {
+                dir('parser-repo') {
+                    git url: "${params.TARGET_REPO2}", branch: "${params.TARGET_BRANCH2}"
+                }
+            }
+        }
+
+        stage('Run Doxygen and get warning') {
+            steps {
+                sh """
+                doxygen ./pipeline-repo/config-warning.doxyfile > ${params.WARNING_FILENAME} 2>&1
+                python3 parser-repo/doxygen-warning-parser.py ${params.WARNING_FILENAME} ${params.WARNING_PARSED_RESULT_NAME}
+                """
+            }
+        }
+
+
+        stage('Package folder') {
+            steps {
+                sh "tar -czf ${params.WARNING_PARSED_RESULT_NAME}.tar.gz ${params.WARNING_PARSED_RESULT_NAME}"
+            }
+        }
+
+        stage('Archive') {
+            steps {
+                archiveArtifacts artifacts: "${params.WARNING_PARSED_RESULT_NAME}.tar.gz", fingerprint: true
+                archiveArtifacts artifacts: "${params.WARNING_FILENAME}", fingerprint: true
+            }
+        }
+    }
+    post {
+        always {
+            echo "Cleaning up workspace after pipeline finishes..."
+            deleteDir()
+        }
+    }
+}
