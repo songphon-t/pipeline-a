@@ -19,5 +19,5 @@
 * Track the file we want for this operation with <https://docs.github.com/en/repositories/working-with-files/managing-large-files/configuring-git-large-file-storage>
 * Files needed to be removed from repo and migrated <https://docs.github.com/en/repositories/working-with-files/managing-large-files/moving-a-file-in-your-repository-to-git-large-file-storage>
 ## Are there other (easier) alternatives?
-* Another idea is we might set the remote repo to support LFS first but not gurantee as easier. 
+* Another idea is we might set the remote repo to support LFS first with predefined folder(that small team would know) to store binary but not gurantee to be easier. 
 * Above idea is invalid in case of forking a repo.
